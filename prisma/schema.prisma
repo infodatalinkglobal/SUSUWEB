@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GroupType {
+  COLLECTOR
+  ROSCA
+}
+
+enum Frequency {
+  WEEKLY
+  MONTHLY
+}
+
+enum MemberRole {
+  ORGANIZER
+  MEMBER
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  LEFT
+}
+
+enum ContributionStatus {
+  PENDING
+  RECORDED
+  VERIFIED
+  MISSED
+}
+
+enum PaymentMethod {
+  MOMO_MANUAL
+  PAYSTACK
+  CASH
+}
+
+enum PaymentAttemptStatus {
+  INITIALIZED
+  VERIFIED
+  FAILED
+}
+
+enum ContributionReviewAction {
+  MOMO_VERIFIED
+  MOMO_REJECTED
+  CASH_RECORDED
+  MARKED_MISSED
+}
+
+model User {
+  id              String    @id @default(cuid())
+  phone           String    @unique @db.VarChar(13)
+  name            String?
+  termsAcceptedAt DateTime?
+  termsVersion    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  memberships           GroupMember[]
+  contributions         Contribution[]
+  reviewedContributions Contribution[]       @relation("ContributionReviewer")
+  contributionReviews   ContributionReview[] @relation("ContributionReviewActor")
+
+  @@index([createdAt])
+}
+
+model SusuGroup {
+  id                 String    @id @default(cuid())
+  name               String    @db.VarChar(80)
+  type               GroupType
+  contributionAmount Decimal   @db.Decimal(10, 2)
+  frequency          Frequency
+  startDate          DateTime
+  currentCycle       Int       @default(1)
+  totalCycles        Int
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  members       GroupMember[]
+  contributions Contribution[]
+
+  @@index([isActive, startDate])
+}
+
+model GroupMember {
+  id            String       @id @default(cuid())
+  groupId       String
+  userId        String
+  role          MemberRole   @default(MEMBER)
+  rotationOrder Int?
+  status        MemberStatus @default(INVITED)
+  invitedAt     DateTime?
+  joinedAt      DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  group         SusuGroup      @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  contributions Contribution[]
+
+  @@unique([groupId, userId])
+  @@unique([groupId, rotationOrder])
+  @@index([userId, status])
+  @@index([groupId, status, role])
+}
+
+model Contribution {
+  id                String             @id @default(cuid())
+  groupId           String
+  memberId          String
+  userId            String
+  cycle             Int
+  amount            Decimal            @db.Decimal(10, 2)
+  status            ContributionStatus @default(PENDING)
+  paymentMethod     PaymentMethod?
+  momoReference     String?
+  paystackReference String?            @unique
+  paidAt            DateTime?
+  verifiedAt        DateTime?
+  reviewNote        String?
+  reviewedAt        DateTime?
+  reviewedByUserId  String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  group           SusuGroup            @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  member          GroupMember          @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reviewedBy      User?                @relation("ContributionReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviews         ContributionReview[]
+  paymentAttempts PaymentAttempt[]
+
+  @@unique([memberId, cycle])
+  @@index([groupId, cycle, status])
+  @@index([userId, createdAt])
+}
+
+model ContributionReview {
+  id                String                   @id @default(cuid())
+  contributionId    String
+  actorUserId       String
+  action            ContributionReviewAction
+  note              String?
+  referenceSnapshot String?                  @db.VarChar(100)
+  createdAt         DateTime                 @default(now())
+
+  contribution Contribution @relation(fields: [contributionId], references: [id], onDelete: Restrict)
+  actor        User         @relation("ContributionReviewActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([contributionId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model PaymentAttempt {
+  id             String               @id @default(cuid())
+  contributionId String
+  reference      String               @unique @db.VarChar(100)
+  amount         Decimal              @db.Decimal(10, 2)
+  currency       String               @default("GHS") @db.VarChar(3)
+  status         PaymentAttemptStatus @default(INITIALIZED)
+  expiresAt      DateTime
+  verifiedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  contribution Contribution @relation(fields: [contributionId], references: [id], onDelete: Restrict)
+
+  @@index([contributionId, status, expiresAt])
+}
+
+// Stores OTP challenge timing and rate-limit state only; OTP codes remain with Arkesel.
+model OtpChallenge {
+  phone                String    @id @db.VarChar(13)
+  challengeIssuedAt    DateTime
+  verificationAttempts Int       @default(0)
+  lockedUntil          DateTime?
+  sendWindowStartedAt  DateTime
+  sendCount            Int       @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([lockedUntil])
+  @@index([challengeIssuedAt])
+}

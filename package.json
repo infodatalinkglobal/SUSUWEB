@@ -1,0 +1,40 @@
+{
+  "name": "susuapp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && npm run lint && npm run typecheck && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "iron-session": "8.0.4",
+    "next": "^15.5.27",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "20.17.30",
+    "@types/react": "18.3.20",
+    "@types/react-dom": "18.3.6",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "postcss": "^8.5.30",
+    "prisma": "5.22.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "5.5.4",
+    "typescript-eslint": "^8.71.2"
+  },
+  "overrides": {
+    "postcss": "$postcss"
+  }
+}

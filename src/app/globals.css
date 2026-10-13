@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-susu-50: #f0fdf4;
+  --color-susu-100: #dcfce7;
+  --color-susu-600: #16a34a;
+  --color-susu-700: #15803d;
+  --color-susu-800: #166534;
+  --color-susu-900: #14532d;
+  --shadow-card: 0 20px 50px -32px rgba(20, 83, 45, 0.28);
+}
+
+:root {
+  color-scheme: light;
+  --background: #f5f8f5;
+  --foreground: #10251a;
+  --muted: #66756c;
+  --border: #dce7de;
+  --surface: #ffffff;
+  --green: #15803d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: #bbf7d0;
+  color: #14532d;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #4ade80;
+  outline-offset: 3px;
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-3xl border border-slate-200/80 bg-white shadow-card;
+  }
+
+  .field-label {
+    @apply mb-2 block text-sm font-semibold text-slate-800;
+  }
+
+  .form-input {
+    @apply h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-700 focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100;
+  }
+
+  .primary-button {
+    @apply inline-flex min-h-12 items-center justify-center rounded-xl bg-green-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-800 focus-visible:outline-green-700 disabled:cursor-not-allowed disabled:bg-green-300;
+  }
+}
